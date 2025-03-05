@@ -1,0 +1,18 @@
+{
+    "manifest_version": 3,
+    "name": "Phantom Wallet Connector",
+    "version": "1.0.0",
+    "description": "Connect to Phantom wallet from your browser",
+    "permissions": [
+        "storage"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://*.phantom.app/"
+    }
+}

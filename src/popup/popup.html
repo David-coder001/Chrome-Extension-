@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Phantom Wallet Connection</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="wallet-status">
+            <div id="statusIcon" class="status-icon"></div>
+            <span id="statusText">Not Connected</span>
+        </div>
+        
+        <div class="wallet-info" id="walletInfo">
+            <div class="address" id="walletAddress"></div>
+            <div class="balance" id="walletBalance"></div>
+        </div>
+
+        <button id="connectButton" class="primary-button">
+            Connect Phantom Wallet
+        </button>
+
+        <button id="disconnectButton" class="secondary-button" style="display: none;">
+            Disconnect
+        </button>
+
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
