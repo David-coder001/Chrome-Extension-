@@ -11,7 +11,7 @@ class PopupManager {
     constructor() {
         this.initializeEventListeners();
         this.checkConnection();
-        console.log('PopupManager initialized');
+        console.log('PopupManager initialized with default sort:', this.currentSortBy, 'and filter:', this.currentFilter);
     }
 
     private initializeEventListeners(): void {
@@ -25,13 +25,13 @@ class PopupManager {
         });
         document.getElementById('sortBy')?.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
-            console.log('Sorting changed to:', target.value);
+            console.log('Sort option changed from', this.currentSortBy, 'to:', target.value);
             this.currentSortBy = target.value;
             this.renderTransactions();
         });
         document.getElementById('filterType')?.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
-            console.log('Filter changed to:', target.value);
+            console.log('Filter option changed from', this.currentFilter, 'to:', target.value);
             this.currentFilter = target.value;
             this.renderTransactions();
         });
@@ -130,8 +130,12 @@ class PopupManager {
 
     private async updateTransactionHistory(): Promise<void> {
         try {
-            if (!this.provider) return;
+            if (!this.provider) {
+                console.log('No provider available for transaction history update');
+                return;
+            }
 
+            console.log('Fetching transaction history...');
             this.transactions = await getTransactionHistory(this.provider);
             console.log('Fetched transactions:', this.transactions);
             this.renderTransactions();
@@ -142,10 +146,15 @@ class PopupManager {
     }
 
     private filterTransactions(transactions: Transaction[]): Transaction[] {
-        console.log('Filtering transactions with type:', this.currentFilter);
-        if (this.currentFilter === 'all') return transactions;
+        console.log('Starting filtering with type:', this.currentFilter);
+        console.log('Initial transaction count:', transactions.length);
 
-        return transactions.filter(tx => {
+        if (this.currentFilter === 'all') {
+            console.log('Returning all transactions');
+            return transactions;
+        }
+
+        const filtered = transactions.filter(tx => {
             switch (this.currentFilter) {
                 case 'transfer':
                     return tx.type === 'transfer';
@@ -157,11 +166,17 @@ class PopupManager {
                     return true;
             }
         });
+
+        console.log('Filtered transaction count:', filtered.length);
+        console.log('Filtered transactions:', filtered);
+        return filtered;
     }
 
     private sortTransactions(transactions: Transaction[]): Transaction[] {
-        console.log('Sorting transactions by:', this.currentSortBy);
-        return [...transactions].sort((a, b) => {
+        console.log('Starting sorting by:', this.currentSortBy);
+        console.log('Pre-sort first transaction:', transactions[0]);
+
+        const sorted = [...transactions].sort((a, b) => {
             if (this.currentSortBy === 'date') {
                 return (b.blockTime || 0) - (a.blockTime || 0);
             } else if (this.currentSortBy === 'amount') {
@@ -169,6 +184,10 @@ class PopupManager {
             }
             return 0;
         });
+
+        console.log('Post-sort first transaction:', sorted[0]);
+        console.log('Sorted transactions:', sorted);
+        return sorted;
     }
 
     private renderTransactions(): void {

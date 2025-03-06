@@ -55,6 +55,7 @@ export const getBalance = async (provider: PhantomProvider): Promise<number> => 
 
 export const getTransactionHistory = async (provider: PhantomProvider): Promise<Transaction[]> => {
     try {
+        console.log('Requesting transaction history from Phantom...');
         const response = await provider.request({
             method: 'getTransactions',
             params: {
@@ -62,14 +63,17 @@ export const getTransactionHistory = async (provider: PhantomProvider): Promise<
                 commitment: 'confirmed'
             }
         });
+        console.log('Raw transaction response:', response);
 
-        return response.map((tx: any) => ({
+        const transactions = response.map((tx: any) => ({
             signature: tx.signature,
             blockTime: tx.blockTime,
             confirmationStatus: tx.confirmationStatus,
             amount: tx.amount,
             type: tx.type
         }));
+        console.log('Processed transactions:', transactions);
+        return transactions;
     } catch (error) {
         console.error('Error fetching transaction history:', error);
         throw error;
