@@ -1,3 +1,11 @@
+export interface Transaction {
+    signature: string;
+    blockTime?: number;
+    confirmationStatus: string;
+    amount?: number;
+    type: string;
+}
+
 export interface PhantomProvider {
     isPhantom?: boolean;
     publicKey?: { toString(): string } | null;
@@ -7,6 +15,7 @@ export interface PhantomProvider {
     signMessage: (message: Uint8Array) => Promise<{ signature: Uint8Array }>;
     connect: () => Promise<{ publicKey: { toString(): string } }>;
     disconnect: () => Promise<void>;
+    request: (params: { method: string; params?: any }) => Promise<any>;
 }
 
 declare global {

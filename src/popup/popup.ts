@@ -1,9 +1,12 @@
-import { PhantomProvider } from '../types/phantom';
-import { connectWallet, disconnectWallet, getProvider } from '../utils/wallet';
+import { PhantomProvider, Transaction } from '../types/phantom';
+import { connectWallet, disconnectWallet, getProvider, getBalance, getTransactionHistory } from '../utils/wallet';
 
 class PopupManager {
     private provider: PhantomProvider | null = null;
     private connected: boolean = false;
+    private transactions: Transaction[] = [];
+    private currentSortBy: string = 'date';
+    private currentFilter: string = 'all';
 
     constructor() {
         this.initializeEventListeners();
@@ -20,6 +23,18 @@ class PopupManager {
             console.log('Disconnect button clicked');
             this.handleDisconnect();
         });
+        document.getElementById('sortBy')?.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            console.log('Sorting changed to:', target.value);
+            this.currentSortBy = target.value;
+            this.renderTransactions();
+        });
+        document.getElementById('filterType')?.addEventListener('change', (e) => {
+            const target = e.target as HTMLSelectElement;
+            console.log('Filter changed to:', target.value);
+            this.currentFilter = target.value;
+            this.renderTransactions();
+        });
     }
 
     private async checkConnection(): Promise<void> {
@@ -33,7 +48,7 @@ class PopupManager {
                     console.log('Wallet is already connected');
                     this.updateConnectionStatus(true);
                     if (provider.publicKey) {
-                        this.updateWalletInfo(provider.publicKey.toString());
+                        await this.updateWalletInfo(provider.publicKey.toString());
                     }
                 }
             } else {
@@ -50,7 +65,7 @@ class PopupManager {
             const publicKey = await connectWallet();
             if (publicKey) {
                 this.updateConnectionStatus(true);
-                this.updateWalletInfo(publicKey);
+                await this.updateWalletInfo(publicKey);
             }
         } catch (error) {
             console.error('Error in handleConnect:', error);
@@ -93,11 +108,96 @@ class PopupManager {
         }
     }
 
-    private updateWalletInfo(publicKey: string): void {
-        const walletAddress = document.getElementById('walletAddress');
-        if (walletAddress) {
-            walletAddress.textContent = `Address: ${this.shortenAddress(publicKey)}`;
+    private async updateWalletInfo(publicKey: string): Promise<void> {
+        try {
+            const walletAddress = document.getElementById('walletAddress');
+            const balanceElement = document.getElementById('walletBalance');
+
+            if (walletAddress) {
+                walletAddress.textContent = `Address: ${this.shortenAddress(publicKey)}`;
+            }
+
+            if (this.provider && balanceElement) {
+                const balance = await getBalance(this.provider);
+                balanceElement.textContent = `Balance: ${balance.toFixed(4)} SOL`;
+                await this.updateTransactionHistory();
+            }
+        } catch (error) {
+            console.error('Error updating wallet info:', error);
+            this.showError('Failed to fetch wallet information');
         }
+    }
+
+    private async updateTransactionHistory(): Promise<void> {
+        try {
+            if (!this.provider) return;
+
+            this.transactions = await getTransactionHistory(this.provider);
+            console.log('Fetched transactions:', this.transactions);
+            this.renderTransactions();
+        } catch (error) {
+            console.error('Error updating transaction history:', error);
+            this.showError('Failed to fetch transaction history');
+        }
+    }
+
+    private filterTransactions(transactions: Transaction[]): Transaction[] {
+        console.log('Filtering transactions with type:', this.currentFilter);
+        if (this.currentFilter === 'all') return transactions;
+
+        return transactions.filter(tx => {
+            switch (this.currentFilter) {
+                case 'transfer':
+                    return tx.type === 'transfer';
+                case 'swap':
+                    return tx.type === 'swap';
+                case 'other':
+                    return !['transfer', 'swap'].includes(tx.type);
+                default:
+                    return true;
+            }
+        });
+    }
+
+    private sortTransactions(transactions: Transaction[]): Transaction[] {
+        console.log('Sorting transactions by:', this.currentSortBy);
+        return [...transactions].sort((a, b) => {
+            if (this.currentSortBy === 'date') {
+                return (b.blockTime || 0) - (a.blockTime || 0);
+            } else if (this.currentSortBy === 'amount') {
+                return (b.amount || 0) - (a.amount || 0);
+            }
+            return 0;
+        });
+    }
+
+    private renderTransactions(): void {
+        const transactionsList = document.getElementById('transactionsList');
+        if (!transactionsList) return;
+
+        const filteredTransactions = this.filterTransactions(this.transactions);
+        console.log('Filtered transactions:', filteredTransactions);
+        const sortedTransactions = this.sortTransactions(filteredTransactions);
+        console.log('Sorted transactions:', sortedTransactions);
+
+        transactionsList.innerHTML = '';
+        sortedTransactions.forEach(tx => {
+            const txElement = document.createElement('div');
+            txElement.className = 'transaction-item';
+
+            const time = tx.blockTime 
+                ? new Date(tx.blockTime * 1000).toLocaleString()
+                : 'Pending';
+
+            txElement.innerHTML = `
+                <div class="transaction-signature">${this.shortenAddress(tx.signature)}</div>
+                <div class="transaction-amount">${tx.amount ? `${tx.amount} SOL` : ''}</div>
+                <div class="transaction-time">${time}</div>
+                <div class="transaction-type">${tx.type || 'Unknown'}</div>
+            `;
+
+            transactionsList.appendChild(txElement);
+        });
     }
 
     private shortenAddress(address: string): string {

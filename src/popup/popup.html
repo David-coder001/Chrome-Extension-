@@ -11,10 +11,27 @@
             <div id="statusIcon" class="status-icon"></div>
             <span id="statusText">Not Connected</span>
         </div>
-        
+
         <div class="wallet-info" id="walletInfo">
             <div class="address" id="walletAddress"></div>
             <div class="balance" id="walletBalance"></div>
+
+            <div class="transactions-section">
+                <h3>Recent Transactions</h3>
+                <div class="transaction-controls">
+                    <select id="sortBy" class="control-item">
+                        <option value="date">Sort by Date</option>
+                        <option value="amount">Sort by Amount</option>
+                    </select>
+                    <select id="filterType" class="control-item">
+                        <option value="all">All Types</option>
+                        <option value="transfer">Transfers</option>
+                        <option value="swap">Swaps</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div id="transactionsList" class="transactions-list"></div>
+            </div>
         </div>
 
         <button id="connectButton" class="primary-button">
